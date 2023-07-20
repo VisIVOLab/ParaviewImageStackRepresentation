@@ -1,0 +1,260 @@
+<ServerManagerConfiguration>
+  <!--======================================================================-->
+  <ProxyGroup name="representations">
+    <RepresentationProxy class="vtkVLVAImageStackRepresentation"
+                         name="VLVAImageStackRepresentation"
+                         processes="client|renderserver|dataserver">
+      <Documentation>Representation to show 2D images. If the input image has
+      3D extents, then this representation shows a single Z
+      slice.</Documentation>
+      <InputProperty command="SetInputConnection"
+                     name="Input">
+        <Documentation>Set the input to the representation. Must be a
+        vtkImageData producer.</Documentation>
+        <DataTypeDomain composite_data_supported="0"
+                        name="input_type">
+          <DataType value="vtkImageData" />
+        </DataTypeDomain>
+        <InputArrayDomain attribute_type="any"
+                          name="input_array_any"></InputArrayDomain>
+      </InputProperty>
+      <IntVectorProperty command="SetVisibility"
+                         default_values="1"
+                         name="Visibility"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Set the visibility for this
+        representation.</Documentation>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetForceUseCache"
+                         default_values="0"
+                         is_internal="1"
+                         name="ForceUseCache"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>Typically UseCache and CacheKey are updated by the View
+        and representations cache based on what the view tells it. However in
+        some cases we may want to force a representation to cache irrespective
+        of the view (e.g. comparative views). In which case these ivars can up
+        set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+        Instead, ForcedCacheKey is used.</Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetForcedCacheKey"
+                            default_values="none"
+                            is_internal="1"
+                            name="ForcedCacheKey"
+                            number_of_elements="1">
+        <DoubleRangeDomain name="range" />
+        <Documentation>Typically UseCache and CacheKey are updated by the View
+        and representations cache based on what the view tells it. However in
+        some cases we may want to force a representation to cache irrespective
+        of the view (e.g. comparative views). In which case these ivars can up
+        set. If ForcedCacheKey is true, it overrides UseCache and CacheKey.
+        Instead, ForcedCacheKey is used.</Documentation>
+      </DoubleVectorProperty>
+      <StringVectorProperty command="SetInputArrayToProcess"
+                            element_types="0 0 0 0 2"
+                            name="ColorArrayName"
+                            no_custom_default="1"
+                            number_of_elements="5">
+        <Documentation>
+          Set the array to color with. One must specify the field association and
+          the array name of the array. If the array is missing, scalar coloring will
+          automatically be disabled.
+        </Documentation>
+        <RepresentedArrayListDomain name="array_list"
+                         input_domain_name="input_array_any">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </RepresentedArrayListDomain>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetSlice"
+                         default_values="0"
+                         name="Slice"
+                         number_of_elements="1">
+        <Documentation>Set the current slice number. Slice number is used to
+        load a 2D slice from a 3D input image. If the input image is 2D, then
+        the slice number if ignored. The direction of the slice is determined
+        by SliceMode.</Documentation>
+        <DimensionsDomain name="dims">
+          <RequiredProperties>
+            <Property function="Input"
+                      name="Input" />
+            <Property function="Direction"
+                      name="SliceMode" />
+          </RequiredProperties>
+        </DimensionsDomain>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetSliceMode"
+                         default_values="5"
+                         label="Slice Direction"
+                         name="SliceMode"
+                         number_of_elements="1">
+        <Documentation>Determines the direction of slicing to obtain a 2D slice
+        from a 3D image.</Documentation>
+        <EnumerationDomain name="enum">
+          <Entry text="XY Plane"
+                 value="5" />
+          <Entry text="YZ Plane"
+                 value="6" />
+          <Entry text="XZ Plane"
+                 value="7" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetMapScalars"
+                         default_values="1"
+                         name="MapScalars"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>When set to True, LookupTable will always be
+        used for scalar mapping. Otherwise, when up to 4 component
+        scalars are present, the components are clamped to a valid
+        color interval (0-255 for an integral type and 0.0-1.0 for a
+        floating point type) and then directly used as
+        color.</Documentation>
+      </IntVectorProperty>
+      <ProxyProperty command="SetLookupTable"
+                     name="LookupTable" >
+        <Documentation>Set the lookup table to use for scalar
+        mapping.</Documentation>
+        <ProxyGroupDomain name="groups">
+          <Group name="lookup_tables" />
+        </ProxyGroupDomain>
+      </ProxyProperty>
+      <IntVectorProperty command="SetUseXYPlane"
+                         default_values="0"
+                         name="UseXYPlane"
+                         number_of_elements="1">
+        <BooleanDomain name="bool" />
+        <Documentation>When set, the image slice is always rendered in the XY
+        plane (Z==0) irrespective of the image bounds. Default if
+        Off.</Documentation>
+      </IntVectorProperty>
+      <DoubleVectorProperty command="SetPosition"
+                            default_values="0 0 0"
+                            name="Position"
+                            number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetScale"
+                            default_values="1 1 1"
+                            name="Scale"
+                            number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetOrientation"
+                            default_values="0 0 0"
+                            name="Orientation"
+                            number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetOrigin"
+                            default_values="0 0 0"
+                            name="Origin"
+                            number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetPickable"
+                         default_values="1"
+                         name="Pickable"
+                         number_of_elements="1">
+        <Hints>
+          <NoDefault />
+        </Hints>
+        <BooleanDomain name="bool" />
+      </IntVectorProperty>
+
+      <DoubleVectorProperty command="SetOpacity"
+                            default_values="1.0"
+                            name="Opacity"
+                            number_of_elements="1">
+        <DoubleRangeDomain max="1"
+                           min="0"
+                           name="range" />
+      </DoubleVectorProperty>
+
+      <ProxyProperty command="SetStackLookupTable"
+                     name="StackLookupTable" >
+        <Documentation>
+          Set the lookup table to use for the active layer in the image stack.
+        </Documentation>
+        <ProxyGroupDomain name="groups">
+          <Group name="lookup_tables" />
+        </ProxyGroupDomain>
+      </ProxyProperty>
+
+      <DoubleVectorProperty command="SetStackOpacity"
+                            default_values="1.0"
+                            name="StackOpacity"
+                            number_of_elements="1">
+        <Documentation>
+          Set the opacity to use for the active layer in the image stack.
+        </Documentation>
+        <DoubleRangeDomain max="1"
+                           min="0"
+                           name="range" />
+      </DoubleVectorProperty>
+
+      <IntVectorProperty name="StackActiveLayer"
+                         command="SetStackActiveLayer"
+                         information_property="StackActiveLayerInfo"
+                         number_of_elements="1"
+                         default_values="1">
+        <Documentation>
+          This property can be used to get the index of the active layer in the image stack.
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty command="GetStackActiveLayer"
+                         information_only="1"
+                         name="StackActiveLayerInfo">
+      </IntVectorProperty>
+
+      <StringVectorProperty command="AddLayerImage"
+                            name="AddImage"
+                            number_of_elements="1"
+                            default_values="">
+      <Documentation>
+        This property can be used to add a new image layer to the image stack. The parameter is the
+        file name of the new image.
+      </Documentation>
+      </StringVectorProperty>
+
+      <IntVectorProperty name="StackLayerVisibility"
+                         command="SetStackLayerVisible"
+                         number_of_elements="2"
+                         default_values="1 1">
+        <Documentation>
+          This property can be used to set a given layer in the image stack visible or not. Parameters
+          are [index, visible (0 or 1)].
+        </Documentation>
+      </IntVectorProperty>
+
+      <IntVectorProperty name="StackLayerIndex"
+                         command="SetLayerIndex"
+                         number_of_elements="2"
+                         default_values="1 1">
+        <Documentation>
+          This property can be used to move a given layer in the image stack to another position. Parameters
+          are [index, newIndex].
+        </Documentation>
+    </IntVectorProperty>
+      <!-- End of VLVAImageStackRepresentation -->
+    </RepresentationProxy>
+
+    <Extension name="UniformGridRepresentation">
+      <RepresentationType subproxy="VLVAImageStackRepresentation"
+                              text="VLVA Image Stack" />
+      <SubProxy>
+        <Proxy name="VLVAImageStackRepresentation"
+               proxygroup="representations"
+               proxyname="VLVAImageStackRepresentation" />
+        <ShareProperties subproxy="SurfaceRepresentation">
+          <Exception name="Input" />
+          <Exception name="Visibility" />
+        </ShareProperties>
+      </SubProxy>
+    </Extension>
+  </ProxyGroup>
+</ServerManagerConfiguration>
