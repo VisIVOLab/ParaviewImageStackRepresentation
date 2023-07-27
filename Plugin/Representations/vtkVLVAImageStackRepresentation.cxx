@@ -16,20 +16,24 @@
 
 #include "vtkExtractVOI.h"
 #include "vtkImageData.h"
+#include "vtkImageMapToColors.h"
 #include "vtkImageProperty.h"
 #include "vtkImageSliceCollection.h"
 #include "vtkImageSliceMapper.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMath.h"
+#include "vtkMPIImageReader.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkProperty.h"
 #include "vtkPVLODActor.h"
 #include "vtkPVRenderView.h"
 #include "vtkRenderer.h"
+#include "vtkScalarsToColors.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStructuredExtent.h"
+#include "vtkPVTransform.h"
 
 #include <algorithm>
 
@@ -52,7 +56,6 @@ vtkVLVAImageStackRepresentation::vtkVLVAImageStackRepresentation()
     auto imageSliceBase = vtkSmartPointer<vtkImageSlice>::New();
     imageSliceBase->SetMapper(imageSliceMapperBase);
     imageSliceBase->GetProperty()->SetInterpolationTypeToNearest();
-
     imageSliceBase->GetProperty()->SetLayerNumber(0);
 }
 
@@ -75,67 +78,133 @@ void vtkVLVAImageStackRepresentation::SetSliceMode(int mode)
     }
 }
 
+//----------------------------------------------------------------------------
 void vtkVLVAImageStackRepresentation::AddLayerImage(const std::string file)
 {
+    std::cerr << "Adding file " << file << " to stack." << std::endl;
     if (file.empty()){
         std::cerr << "Adding new image aborted due to empty file name." << std::endl;
         return;
     }
-    auto newImage = vtkSmartPointer<vtkImageSlice>::New();
-    //TODO:: get actual image from file first
+    vtkSmartPointer<vtkMPIImageReader> reader = vtkSmartPointer<vtkMPIImageReader>::New();
+    reader->SetFileName(file.c_str());
+    std::cerr << "Reader created for file to add to stack." << std::endl;
+
+    vtkSmartPointer<vtkImageSlice> newImage = vtkSmartPointer<vtkImageSlice>::New();
+    vtkSmartPointer<vtkImageMapToColors> colors = vtkSmartPointer<vtkImageMapToColors>::New();
+    colors->SetInputData(reader->GetOutput());
+
+    vtkSmartPointer<vtkScalarsToColors> lut = vtkSmartPointer<vtkScalarsToColors>::New();
+    colors->SetLookupTable(lut);
+    colors->Update();
+
+    vtkSmartPointer<vtkImageSliceMapper> imageSliceMapperLayer =
+        vtkSmartPointer<vtkImageSliceMapper>::New();
+    imageSliceMapperLayer->SetInputData(colors->GetOutput());
+
+    vtkSmartPointer<vtkImageSlice> imageSliceLayer = vtkSmartPointer<vtkImageSlice>::New();
+    imageSliceLayer->SetMapper(imageSliceMapperLayer);
+    imageSliceLayer->GetProperty()->SetInterpolationTypeToNearest();
+
+    double bounds[6];
+    double angle = 0;
+    vtkSmartPointer<vtkPVTransform> transform = vtkSmartPointer<vtkPVTransform>::New();
+    reader->GetOutput()->GetBounds(bounds);
+
+    // Rotate about the origin point (world coordinates)
+    transform->Translate(bounds[0], bounds[2], bounds[4]);
+    transform->RotateWXYZ(angle, 0, 0, 1);
+    transform->Translate(-bounds[0], -bounds[2], -bounds[4]);
+    imageSliceLayer->SetUserTransform(transform);
+
     int newActiveLayerNumber = this->ImageStack->GetImages()->GetNumberOfItems();
     newImage->GetProperty()->SetLayerNumber(newActiveLayerNumber);
     this->ImageStack->AddImage(newImage);
     this->SetStackActiveLayer(newActiveLayerNumber);
+    std::cerr << "Image " << file << " added to stack." << std::endl;
+
+    this->MarkModified();
 }
 
+//----------------------------------------------------------------------------
 void vtkVLVAImageStackRepresentation::RemoveLayerImage(const int index)
 {
     if (index > 0 && index < ImageStack->GetImages()->GetNumberOfItems()){
         auto img = vtkImageSlice::SafeDownCast(ImageStack->GetImages()->GetItemAsObject(index));
         this->ImageStack->RemoveImage(img);
+        for (int i = index; i < ImageStack->GetImages()->GetNumberOfItems(); ++i){
+            vtkImageSlice::SafeDownCast(this->ImageStack->GetImages()->GetItemAsObject(i))->GetProperty()->SetLayerNumber(i - 1);
+        }
+        std::cerr << "Image that was at index " << index << " removed from image stack." << std::endl;
     }
     else{
         std::cerr << "Index " << index << " for image to be removed is out of bounds [1, " << ImageStack->GetImages()->GetNumberOfItems() - 1 << "]." << std::endl;
     }
+
+    this->MarkModified();
 }
 
+//----------------------------------------------------------------------------
 void vtkVLVAImageStackRepresentation::SetStackLookupTable(vtkScalarsToColors *val)
 {
+    std::cerr << "Stack lookup table set to " << val << "." << std::endl;
     this->ImageStack->GetActiveImage()->GetProperty()->SetLookupTable(val);
+
+    this->MarkModified();
 }
 
+//----------------------------------------------------------------------------
 void vtkVLVAImageStackRepresentation::SetStackOpacity(double val)
 {
+    std::cerr << "Stack active image opacity set to " << val << "." << std::endl;
     this->ImageStack->GetActiveImage()->GetProperty()->SetOpacity(val);
+
+    this->MarkModified();
 }
 
-int vtkVLVAImageStackRepresentation::GetStackActiveLayer()
+//----------------------------------------------------------------------------
+int vtkVLVAImageStackRepresentation::GetStackActiveLayer() const
 {
+    std::cerr << "Stack active image index is " << this->ImageStack->GetActiveLayer() << "." << std::endl;
     return this->ImageStack->GetActiveLayer();
 }
 
+//----------------------------------------------------------------------------
+int vtkVLVAImageStackRepresentation::GetStackLayerCount() const
+{
+    std::cerr << "Returning count of stack layers which is " << this->ImageStack->GetImages()->GetNumberOfItems() << "." << std::endl;
+    return this->ImageStack->GetImages()->GetNumberOfItems();
+}
+
+//----------------------------------------------------------------------------
 void vtkVLVAImageStackRepresentation::SetStackActiveLayer(int val)
 {
+    std::cerr << "Stack active image index set to " << val << "." << std::endl;
     if (val > 0 && val < ImageStack->GetImages()->GetNumberOfItems()){
         this->ImageStack->SetActiveLayer(val);
+
+        this->MarkModified();
     }
     else{
-        std::cerr << "Index " << val << " for image to be removed is out of bounds [1, " << ImageStack->GetImages()->GetNumberOfItems() - 1 << "]." << std::endl;
+        std::cerr << "Index " << val << " for image to be set as the active layer is out of bounds [1, " << ImageStack->GetImages()->GetNumberOfItems() - 1 << "]." << std::endl;
     }
 }
 
+//----------------------------------------------------------------------------
 void vtkVLVAImageStackRepresentation::SetStackLayerVisible(int index, int visible)
 {
     if (index > 0 && index < ImageStack->GetImages()->GetNumberOfItems()){
         auto img = vtkImageSlice::SafeDownCast(ImageStack->GetImages()->GetItemAsObject(index));
         img->SetVisibility(visible);
+
+        this->MarkModified();
     }
     else{
         std::cerr << "Index " << index << " for image to have visibility changed is out of bounds [1, " << ImageStack->GetImages()->GetNumberOfItems() - 1 << "]." << std::endl;
     }
 }
 
+//----------------------------------------------------------------------------
 void vtkVLVAImageStackRepresentation::SetLayerIndex(int index, int newIndex)
 {
     if (index <= 0 || index >= ImageStack->GetImages()->GetNumberOfItems() || newIndex <= 0 || newIndex >= ImageStack->GetImages()->GetNumberOfItems()){
@@ -155,6 +224,8 @@ void vtkVLVAImageStackRepresentation::SetLayerIndex(int index, int newIndex)
             }
         }
         vtkImageSlice::SafeDownCast(this->ImageStack->GetImages()->GetItemAsObject(index))->GetProperty()->SetLayerNumber(newIndex);
+
+        this->MarkModified();
     }
 }
 

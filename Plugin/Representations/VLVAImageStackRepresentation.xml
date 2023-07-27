@@ -184,9 +184,9 @@
         </ProxyGroupDomain>
       </ProxyProperty>
 
-      <DoubleVectorProperty command="SetStackOpacity"
+      <!--<DoubleVectorProperty command="SetStackOpacity"
                             default_values="1.0"
-                            name="StackOpacity"
+                            name="StackOpacityOption"
                             number_of_elements="1">
         <Documentation>
           Set the opacity to use for the active layer in the image stack.
@@ -194,7 +194,7 @@
         <DoubleRangeDomain max="1"
                            min="0"
                            name="range" />
-      </DoubleVectorProperty>
+      </DoubleVectorProperty>-->
 
       <IntVectorProperty name="StackActiveLayer"
                          command="SetStackActiveLayer"
@@ -206,9 +206,24 @@
         </Documentation>
       </IntVectorProperty>
 
+      <IntVectorProperty name="RemoveImage"
+                         command="RemoveLayerImage"
+                         number_of_elements="1"
+                         default_values="1">
+        <Documentation>
+          This property can be used to remove an image from the image stack. The parameter is the
+          index of the image to be removed.
+        </Documentation>
+      </IntVectorProperty>
+
       <IntVectorProperty command="GetStackActiveLayer"
                          information_only="1"
                          name="StackActiveLayerInfo">
+      </IntVectorProperty>
+
+      <IntVectorProperty command="GetStackLayerCount"
+                         information_only="1"
+                         name="StackLayerCount">
       </IntVectorProperty>
 
       <StringVectorProperty command="AddLayerImage"
@@ -239,7 +254,7 @@
           This property can be used to move a given layer in the image stack to another position. Parameters
           are [index, newIndex].
         </Documentation>
-    </IntVectorProperty>
+      </IntVectorProperty>
       <!-- End of VLVAImageStackRepresentation -->
     </RepresentationProxy>
 

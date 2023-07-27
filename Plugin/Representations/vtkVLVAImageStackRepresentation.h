@@ -109,7 +109,8 @@ public:
     //Accessors and mutators for imagestack component
     void SetStackLookupTable(vtkScalarsToColors* val);
     void SetStackOpacity(double val);
-    int GetStackActiveLayer();
+    int GetStackActiveLayer() const;
+    int GetStackLayerCount() const;
     void SetStackActiveLayer(int val);
     void SetStackLayerVisible(int index, int visible);
     void SetLayerIndex(int index, int newIndex);
