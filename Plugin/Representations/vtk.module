@@ -3,5 +3,8 @@ NAME
 DEPENDS
   ParaView::RemotingViews
   VTK::RenderingOpenGL2
+  VTK::RenderingImage
+  ParaView::VTKExtensionsMisc
 PRIVATE_DEPENDS
   VTK::CommonCore
+  VTK::IOMPIImage
