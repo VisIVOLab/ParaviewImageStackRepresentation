@@ -184,7 +184,7 @@
         </ProxyGroupDomain>
       </ProxyProperty>
 
-      <!--<DoubleVectorProperty command="SetStackOpacity"
+      <DoubleVectorProperty command="SetStackOpacity"
                             default_values="1.0"
                             name="StackOpacityOption"
                             number_of_elements="1">
@@ -194,7 +194,7 @@
         <DoubleRangeDomain max="1"
                            min="0"
                            name="range" />
-      </DoubleVectorProperty>-->
+      </DoubleVectorProperty>
 
       <IntVectorProperty name="StackActiveLayer"
                          command="SetStackActiveLayer"
@@ -209,7 +209,7 @@
       <IntVectorProperty name="RemoveImage"
                          command="RemoveLayerImage"
                          number_of_elements="1"
-                         default_values="1">
+                         default_values="0">
         <Documentation>
           This property can be used to remove an image from the image stack. The parameter is the
           index of the image to be removed.

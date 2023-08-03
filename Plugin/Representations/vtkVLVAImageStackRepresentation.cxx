@@ -22,6 +22,7 @@
 #include "vtkImageSliceMapper.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
+#include "vtkLookupTable.h"
 #include "vtkMath.h"
 #include "vtkMPIImageReader.h"
 #include "vtkNew.h"
@@ -43,6 +44,7 @@ vtkStandardNewMacro(vtkVLVAImageStackRepresentation)
 vtkVLVAImageStackRepresentation::vtkVLVAImageStackRepresentation()
 {
 //    this->SetRepresentation(VTK_SURFACE);
+    std::cout << "Initialising image stack representation." << std::endl;
     this->Slice = 0;
     this->SliceMode = XY_PLANE;
     this->SliceMapper = vtkVLVAImageStackMapper::New();
@@ -52,11 +54,15 @@ vtkVLVAImageStackRepresentation::vtkVLVAImageStackRepresentation()
 
     vtkSmartPointer<vtkImageSliceMapper> imageSliceMapperBase = vtkSmartPointer<vtkImageSliceMapper>::New();
 
+    std::cout << "Creating image stack base image" << std::endl;
     this->ImageStack = vtkSmartPointer<vtkImageStack>::New();
     auto imageSliceBase = vtkSmartPointer<vtkImageSlice>::New();
     imageSliceBase->SetMapper(imageSliceMapperBase);
     imageSliceBase->GetProperty()->SetInterpolationTypeToNearest();
     imageSliceBase->GetProperty()->SetLayerNumber(0);
+    this->ImageStack->AddImage(imageSliceBase);
+
+//    AddLayerImage("/home/pietersielie-aw-ubuntu/Documents/INAF/rosat_pspc_rdf2_3_im3.fits");
 }
 
 //----------------------------------------------------------------------------
@@ -90,11 +96,13 @@ void vtkVLVAImageStackRepresentation::AddLayerImage(const std::string file)
     reader->SetFileName(file.c_str());
     std::cerr << "Reader created for file to add to stack." << std::endl;
 
-    vtkSmartPointer<vtkImageSlice> newImage = vtkSmartPointer<vtkImageSlice>::New();
     vtkSmartPointer<vtkImageMapToColors> colors = vtkSmartPointer<vtkImageMapToColors>::New();
     colors->SetInputData(reader->GetOutput());
 
-    vtkSmartPointer<vtkScalarsToColors> lut = vtkSmartPointer<vtkScalarsToColors>::New();
+    vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+    lut->SetNumberOfTableValues(128);
+    for (int i = 0; i < 128; i++)
+        lut->SetTableValue(i, i / 128.0, i / 128.0, i / 128.0, 1);
     colors->SetLookupTable(lut);
     colors->Update();
 
@@ -102,9 +110,10 @@ void vtkVLVAImageStackRepresentation::AddLayerImage(const std::string file)
         vtkSmartPointer<vtkImageSliceMapper>::New();
     imageSliceMapperLayer->SetInputData(colors->GetOutput());
 
-    vtkSmartPointer<vtkImageSlice> imageSliceLayer = vtkSmartPointer<vtkImageSlice>::New();
-    imageSliceLayer->SetMapper(imageSliceMapperLayer);
-    imageSliceLayer->GetProperty()->SetInterpolationTypeToNearest();
+    vtkSmartPointer<vtkImageSlice> newImage = vtkSmartPointer<vtkImageSlice>::New();
+    newImage->SetMapper(imageSliceMapperLayer);
+    newImage->GetProperty()->SetOpacity(0.8);
+    newImage->GetProperty()->SetInterpolationTypeToNearest();
 
     double bounds[6];
     double angle = 0;
@@ -115,7 +124,7 @@ void vtkVLVAImageStackRepresentation::AddLayerImage(const std::string file)
     transform->Translate(bounds[0], bounds[2], bounds[4]);
     transform->RotateWXYZ(angle, 0, 0, 1);
     transform->Translate(-bounds[0], -bounds[2], -bounds[4]);
-    imageSliceLayer->SetUserTransform(transform);
+    newImage->SetUserTransform(transform);
 
     int newActiveLayerNumber = this->ImageStack->GetImages()->GetNumberOfItems();
     newImage->GetProperty()->SetLayerNumber(newActiveLayerNumber);
@@ -129,6 +138,7 @@ void vtkVLVAImageStackRepresentation::AddLayerImage(const std::string file)
 //----------------------------------------------------------------------------
 void vtkVLVAImageStackRepresentation::RemoveLayerImage(const int index)
 {
+    std::cout << "Removing image that is at index " << index << " from image stack." << std::endl;
     if (index > 0 && index < ImageStack->GetImages()->GetNumberOfItems()){
         auto img = vtkImageSlice::SafeDownCast(ImageStack->GetImages()->GetItemAsObject(index));
         this->ImageStack->RemoveImage(img);
